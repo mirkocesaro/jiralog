@@ -20,7 +20,8 @@ class LogCommand extends Command
     {
         parent::__construct($name);
 
-        $this->dotEnv = Dotenv::createImmutable(__DIR__ .
+        $this->dotEnv = Dotenv::createImmutable(
+            __DIR__ .
             DIRECTORY_SEPARATOR . '..' .
             DIRECTORY_SEPARATOR . '..' .
             DIRECTORY_SEPARATOR . '..'
@@ -37,15 +38,14 @@ class LogCommand extends Command
 
     protected function configure(): void
     {
-       $this
+        $this
             ->setDescription('Create a new worklog')
             ->setHelp('This command allows you to create a new worklog')
             ->addArgument('date', InputArgument::REQUIRED, 'Date of the work to log ')
             ->addArgument('from', InputArgument::REQUIRED, 'Start time')
-            ->addArgument('to', InputArgument::REQUIRED, 'End time' )
+            ->addArgument('to', InputArgument::REQUIRED, 'End time')
             ->addArgument('issue', InputArgument::REQUIRED, 'Issue id')
             ->addArgument('comment', InputArgument::OPTIONAL);
-
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -57,7 +57,7 @@ class LogCommand extends Command
         $comment = $input->getArgument('comment') ?: '';
 
 
-        $log = LogMessage::createLog($issue, $date, $startTime, $endTime, $comment, $_SERVER['AUTHOR_ACCOUNT_ID'] );
+        $log = LogMessage::createLog($issue, $date, $startTime, $endTime, $comment, $_SERVER['AUTHOR_ACCOUNT_ID']);
 
         $client = new HttpClient([
             'base_uri' => $_SERVER['TEMPO_ENDPOINT'],
@@ -68,13 +68,14 @@ class LogCommand extends Command
             ]
         ]);
 
-        $response = $client->request('POST',
+        $response = $client->request(
+            'POST',
             '/core/3/worklogs',
             ['json'=>$log->toArray()]
         );
 
-//$output->writeln($response->getStatusCode());
-//$output->writeln($response->getBody());
+        //$output->writeln($response->getStatusCode());
+        //$output->writeln($response->getBody());
 
         return Command::SUCCESS;
 
@@ -84,5 +85,4 @@ class LogCommand extends Command
         // on invalid argument
         // return Command::INVALID
     }
-
 }

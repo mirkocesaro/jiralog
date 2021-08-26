@@ -11,7 +11,7 @@ class LogMessageTest extends TestCase
 {
     public function testCreateLogFromInput(): void
     {
-        $log = LogMessage::createLog('TEST-73', '2021-10-1','1030', '1145', 'test comment','userid' );
+        $log = LogMessage::createLog('TEST-73', '2021-10-1', '1030', '1145', 'test comment', 'userid');
 
         $requestPayload = $log->toArray();
 
@@ -21,7 +21,5 @@ class LogMessageTest extends TestCase
         $this->assertSame(4500, $requestPayload['timeSpentSeconds']);
         $this->assertSame('test comment', $requestPayload['description']);
         $this->assertSame('userid', $requestPayload['authorAccountId']);
-
-
     }
 }
