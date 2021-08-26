@@ -1,0 +1,17 @@
+#!/usr/bin/env php
+<?php
+require_once __DIR__.'/vendor/autoload.php';
+
+use Symfony\Component\Console\Application;
+
+$application = new Application();
+
+try {
+
+    $application->add(new \MirkoCesaro\JiraLog\Console\Tempo\Worklog\LogCommand());
+
+}catch (Dotenv\Exception\ValidationException $exception){
+    print_r($exception->getMessage());
+}
+$application->run();
+

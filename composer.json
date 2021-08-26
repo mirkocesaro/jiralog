@@ -1,0 +1,28 @@
+{
+    "name": "mirkocesaro/jiralog",
+    "description": "JiraLog allows you to track time on Jira with CLI",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Mirko Cesaro",
+            "email": "mirko.cesaro@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+          "MirkoCesaro\\JiraLog\\Console\\": "src/",
+          "MirkoCesaro\\JiraLog\\UTest\\": "tests/"
+        }
+      },
+    "minimum-stability": "dev",
+    "require": {
+        "symfony/console" : "*",
+        "guzzlehttp/guzzle":"^7.0",
+        "vlucas/phpdotenv": "^5.3@dev"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5",
+        "friendsofphp/php-cs-fixer": "^2.15"
+    }
+}
