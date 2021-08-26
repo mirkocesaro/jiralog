@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MirkoCesaro\JiraLog\UTest\Tempo\Worklog;
 
+use MirkoCesaro\JiraLog\Console\Exception\NotValidLogException;
 use MirkoCesaro\JiraLog\Console\Tempo\Worklog\LogMessage;
 use PHPUnit\Framework\TestCase;
 
@@ -21,5 +22,19 @@ class LogMessageTest extends TestCase
         $this->assertSame(4500, $requestPayload['timeSpentSeconds']);
         $this->assertSame('test comment', $requestPayload['description']);
         $this->assertSame('userid', $requestPayload['authorAccountId']);
+    }
+
+    public function testWrongInput():void
+    {
+        $this->expectException(NotValidLogException::class);
+
+        LogMessage::createLog('', '', '', '', '', '');
+    }
+
+    public function testZeroSecondsToLog():void
+    {
+        $this->expectException(NotValidLogException::class);
+
+        LogMessage::createLog('TEST-73', '2021-1-1', '1000', '1000', 'Tet', 'user-1');
     }
 }

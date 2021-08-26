@@ -5,6 +5,8 @@ namespace MirkoCesaro\JiraLog\Console\Tempo\Worklog;
 
 use Dotenv\Dotenv;
 use GuzzleHttp\Client as HttpClient;
+use GuzzleHttp\Exception\RequestException;
+use MirkoCesaro\JiraLog\Console\Exception\NotValidLogException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -56,33 +58,34 @@ class LogCommand extends Command
         $issue = $input->getArgument('issue');
         $comment = $input->getArgument('comment') ?: '';
 
+        try {
+            $log = LogMessage::createLog($issue, $date, $startTime, $endTime, $comment, $_SERVER['AUTHOR_ACCOUNT_ID']);
 
-        $log = LogMessage::createLog($issue, $date, $startTime, $endTime, $comment, $_SERVER['AUTHOR_ACCOUNT_ID']);
+            $client = new HttpClient([
+                'base_uri' => $_SERVER['TEMPO_ENDPOINT'],
+                'timeout' => 5.0,
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $_SERVER['TOKEN'],
+                    'Content-Type' => 'application/json',
+                ]
+            ]);
 
-        $client = new HttpClient([
-            'base_uri' => $_SERVER['TEMPO_ENDPOINT'],
-            'timeout'  => 5.0,
-            'headers' => [
-                'Authorization' => 'Bearer '.$_SERVER['TOKEN'],
-                'Content-Type' => 'application/json',
-            ]
-        ]);
+            $response = $client->request(
+                'POST',
+                '/core/3/worklogs',
+                ['json' => $log->toArray()]
+            );
 
-        $response = $client->request(
-            'POST',
-            '/core/3/worklogs',
-            ['json'=>$log->toArray()]
-        );
+            //$output->writeln($response->getStatusCode());
+            //$output->writeln($response->getBody());
 
-        //$output->writeln($response->getStatusCode());
-        //$output->writeln($response->getBody());
-
-        return Command::SUCCESS;
-
-        // on error
-        // return Command::FAILURE;
-
-        // on invalid argument
-        // return Command::INVALID
+            return Command::SUCCESS;
+        } catch (NotValidLogException $e) {
+            $output->writeln($e->getMessage());
+            return Command::INVALID;
+        } catch (RequestException $e) {
+            $output->writeln($e->getMessage());
+            return Command::FAILURE;
+        }
     }
 }
