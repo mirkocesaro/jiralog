@@ -63,7 +63,7 @@ class LogCommand extends Command
 
             $client = new HttpClient([
                 'base_uri' => $_SERVER['TEMPO_ENDPOINT'],
-                'timeout' => 5.0,
+                'timeout' => 10.0,
                 'headers' => [
                     'Authorization' => 'Bearer ' . $_SERVER['TOKEN'],
                     'Content-Type' => 'application/json',
@@ -75,10 +75,6 @@ class LogCommand extends Command
                 '/core/3/worklogs',
                 ['json' => $log->toArray()]
             );
-
-            //$output->writeln($response->getStatusCode());
-            //$output->writeln($response->getBody());
-
             return Command::SUCCESS;
         } catch (NotValidLogException $e) {
             $output->writeln($e->getMessage());

@@ -16,26 +16,6 @@ class LogMessage
     protected $description;
     protected $authorAccountId;
 
-    //{
-    //  "issueKey": "DUM-1",
-    //  "timeSpentSeconds": 3600,
-    //  "billableSeconds": 5200,
-    //  "startDate": "2017-02-06",
-    //  "startTime": "20:06:00",
-    //  "description": "Investigating a problem with our external database system", // optional depending on setting in Tempo Admin
-    //  "authorAccountId": "1111aaaa2222bbbb3333cccc",
-    //  "remainingEstimateSeconds": 7200, // optional depending on setting in Tempo Admin
-    //  "attributes": [
-//    {
-//        "key": "_EXTERNALREF_",
-//      "value": "EXT-32548"
-//    },
-//    {
-//        "key": "_COLOR_",
-//      "value": "green"
-//    }
-    //  ]
-    //}
     public function __construct(
         string $issueKey,
         \DateTime $startDate,
@@ -66,6 +46,10 @@ class LogMessage
         $timeEnd = \DateTime::createFromFormat('Hi', $endTime);
         if (!$date || !$timeStart|| !$timeEnd) {
             throw new NotValidLogException('Not valid date');
+        }
+
+        if($timeEnd < $timeStart){
+            throw new NotValidLogException('Start time must be greater that end time.');
         }
         $timeDiff = $timeEnd->diff($timeStart);
         $seconds = $timeDiff->h*60*60 + $timeDiff->i*60;
