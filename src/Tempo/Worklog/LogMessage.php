@@ -15,6 +15,7 @@ class LogMessage
     protected $startTime;
     protected $description;
     protected $authorAccountId;
+    protected $attributes;
 
     public function __construct(
         string $issueKey,
@@ -22,6 +23,7 @@ class LogMessage
         \DateTime $startTime,
         int $timeSpentSeconds,
         string $description,
+        array $attributes,
         string $authorAccountId
     ) {
         $this->issueKey = $issueKey;
@@ -30,6 +32,7 @@ class LogMessage
         $this->description = $description;
         $this->authorAccountId = $authorAccountId;
         $this->startTime = $startTime;
+        $this->attributes = $attributes;
     }
 
     public static function createLog(
@@ -38,6 +41,7 @@ class LogMessage
         string $startTime,
         string $endTime,
         string $comment,
+        array $attributes,
         string $authorAccountId
     ):self {
         $date = \DateTime::createFromFormat('Y-m-d', $date);
@@ -48,7 +52,7 @@ class LogMessage
             throw new NotValidLogException('Not valid date');
         }
 
-        if($timeEnd < $timeStart){
+        if ($timeEnd < $timeStart) {
             throw new NotValidLogException('Start time must be greater that end time.');
         }
         $timeDiff = $timeEnd->diff($timeStart);
@@ -57,6 +61,23 @@ class LogMessage
         if ($seconds<=0) {
             throw new NotValidLogException('Log time has to be greater then zero');
         }
+        
+        $attributeList = [];
+
+        foreach ($attributes as $attribute) {
+            if (strpos($attribute, ':') === false) {
+                throw new NotValidLogException('Not valid attribute: ' . $attribute. '. You should use a string like `key:value`');
+            }
+            $splittedAttribute = explode(':', $attribute);
+
+            if (count($splittedAttribute) != 2) {
+                throw new NotValidLogException('Not valid attribute: ' . $attribute. '. You should use only one key and one value like `key:value`');
+            }
+            $attributeList[] = [
+                "key"=> $splittedAttribute[0],
+                "value"=> $splittedAttribute[1]
+            ];
+        }
 
         return new self(
             $issueKey,
@@ -64,6 +85,7 @@ class LogMessage
             $timeStart,
             $seconds,
             $comment,
+            $attributeList,
             $authorAccountId
         );
     }
@@ -76,7 +98,8 @@ class LogMessage
             "startDate"=> $this->startDate->format('Y-m-d'),
             "startTime" => $this->startTime->format('H:i:00'),
             "description"=> $this->description,
-            "authorAccountId"=> $this->authorAccountId
+            "authorAccountId"=> $this->authorAccountId,
+            "attributes"=> $this->attributes,
         ];
     }
 }

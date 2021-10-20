@@ -47,7 +47,14 @@ class LogCommand extends Command
             ->addArgument('from', InputArgument::REQUIRED, 'Start time')
             ->addArgument('to', InputArgument::REQUIRED, 'End time')
             ->addArgument('issue', InputArgument::REQUIRED, 'Issue id')
-            ->addArgument('comment', InputArgument::OPTIONAL);
+            ->addArgument('comment', InputArgument::OPTIONAL)
+            ->addOption(
+                'attributes',
+                'a',
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Add custom attributes to your log',
+                []
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -57,9 +64,10 @@ class LogCommand extends Command
         $endTime = $input->getArgument('to');
         $issue = $input->getArgument('issue');
         $comment = $input->getArgument('comment') ?: '';
+        $attributes = $input->getOption('attributes');
 
         try {
-            $log = LogMessage::createLog($issue, $date, $startTime, $endTime, $comment, $_SERVER['AUTHOR_ACCOUNT_ID']);
+            $log = LogMessage::createLog($issue, $date, $startTime, $endTime, $comment, $attributes, $_SERVER['AUTHOR_ACCOUNT_ID']);
 
             $client = new HttpClient([
                 'base_uri' => $_SERVER['TEMPO_ENDPOINT'],
@@ -81,6 +89,12 @@ class LogCommand extends Command
             return Command::INVALID;
         } catch (RequestException $e) {
             $output->writeln($e->getMessage());
+            $output->writeln([
+                'Log Command Exception',
+                '======================',
+                json_encode($log->toArray()),
+                '======================',
+            ]);
             return Command::FAILURE;
         }
     }

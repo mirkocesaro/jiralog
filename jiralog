@@ -9,6 +9,7 @@ $application = new Application();
 try {
 
     $application->add(new \MirkoCesaro\JiraLog\Console\Tempo\Worklog\LogCommand());
+    $application->add(new \MirkoCesaro\JiraLog\Console\Tempo\WorkAttributes\AttributeListCommand());
 
 }catch (Dotenv\Exception\ValidationException $exception){
     print_r($exception->getMessage());

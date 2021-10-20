@@ -30,13 +30,28 @@ Then, customize `.env` with your data.
 ## Available commands
 
 ### Tempo
+
+#### Work attribute 
+Get the list of all work attriutes available on tempo
+
+     jiralog tempo:work-attributes
+
+#### Track worklog
 Log a new worklog on tempo.io
 
-     jiralog tempo:log <date> <from> <to> <issue> [<comment>]
+     jiralog tempo:log <date> <from> <to> <issue> [<comment>] [--attributes='key:value']
 
 example
 
     jiralog tempo:log 2021-08-25 1330 1400 TASK-73 "Comment"
+
+another example with an attribute
+
+    jiralog tempo:log 2021-08-25 1330 1400 TASK-73 "Comment" --attributes='_Activity_:Analysis'
+
+same example with alias
+
+    jiralog tempo:log 2021-08-25 1330 1400 TASK-73 "Comment" -a _Activity_:Analysis
 
 
 ## Tests
