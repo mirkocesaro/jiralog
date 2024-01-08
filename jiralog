@@ -10,6 +10,8 @@ try {
 
     $application->add(new \MirkoCesaro\JiraLog\Console\Tempo\Worklog\LogCommand());
     $application->add(new \MirkoCesaro\JiraLog\Console\Tempo\WorkAttributes\AttributeListCommand());
+    $application->add(new \MirkoCesaro\JiraLog\Console\Jira\IssuePicker\IssuePickerCommand());
+    $application->add(new \MirkoCesaro\JiraLog\Console\Tempo\ExtractWorklogsCommand());
 
 }catch (Dotenv\Exception\ValidationException $exception){
     print_r($exception->getMessage());
