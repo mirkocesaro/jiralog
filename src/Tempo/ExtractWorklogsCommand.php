@@ -24,6 +24,8 @@ class ExtractWorklogsCommand extends Command
     protected static $defaultName = 'tempo:extract-logs';
     protected Dotenv $dotEnv;
 
+    protected array $history = [];
+
     public function __construct(string $name = null)
     {
         parent::__construct($name);
@@ -97,13 +99,14 @@ class ExtractWorklogsCommand extends Command
             $endTime->add(\DateInterval::createFromDateString($result['timeSpentSeconds'] . " seconds"));
 
             $result = [
+                'worklogId' => $result['tempoWorklogId'],
                 'issue_id' => $result['issue']['id'],
                 'key_adeo' => '',
                 'time' => $result['timeSpentSeconds'],
                 'date' => $result['startDate'],
-                'startTime' => \DateTime::createFromFormat("H:i:s", $result['startTime'])->format('H:i'),
-                'endTime' => $endTime->format('H:i'),
-                'formattedTime' => $this->formatTime($result['timeSpentSeconds']),
+                'start' => \DateTime::createFromFormat("H:i:s", $result['startTime'])->format('H:i'),
+                'end' => $endTime->format('H:i'),
+                'formatted' => $this->formatTime($result['timeSpentSeconds']),
                 'description' => $result['description']
             ];
 
@@ -162,6 +165,12 @@ class ExtractWorklogsCommand extends Command
             return 0;
         }
 
+        $historyPath = realpath(__DIR__."/../../log_history.json");
+
+        if(is_file($historyPath)) {
+            $this->history = json_decode(file_get_contents($historyPath), true);
+        }
+
         $output->writeln("");
 
         foreach($results as $issue) {
@@ -170,6 +179,11 @@ class ExtractWorklogsCommand extends Command
             }
 
             $output->writeln(sprintf("<comment>%s - Esportazione in corso... </comment>", $issue['key_adeo']));
+
+            if(!empty($this->history[$issue['worklogId']])) {
+                $output->writeln("<info>Worklog già esportato</info>");
+                continue;
+            }
 
             if(!$qh->ask(
                 $input,
@@ -187,11 +201,15 @@ class ExtractWorklogsCommand extends Command
 
             $adeoWorklog = $adeoApi->create($issue['key_adeo'], $payload);
 
+            $this->history[$issue['worklogId']] = $adeoWorklog['id'];
+
             $output->writeln([
                 "<info>Worklog creato con ID: " . $adeoWorklog['id'] . "</info>",
                 ""
             ]);
         }
+
+        file_put_contents($historyPath, json_encode($this->history, JSON_PRETTY_PRINT));
 
         return 0;
     }
