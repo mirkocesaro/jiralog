@@ -4,3 +4,4 @@
 /vendor/
 /.idea
 /.php_cs.cache
+log_history.json
