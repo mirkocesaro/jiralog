@@ -25,7 +25,8 @@ class Search extends AbstractApi
                             'status',
                             'updated',
                             'timespent',
-                            'summary'
+                            'summary',
+                            'project'
                         ]
                     ]
                 )

@@ -3,7 +3,6 @@
 namespace MirkoCesaro\JiraLog\Console\Tempo;
 
 use Dotenv\Dotenv;
-use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\RequestException;
 use MirkoCesaro\JiraLog\Console\Api\Jira\IssueWorklog;
 use MirkoCesaro\JiraLog\Console\Api\Jira\Search;
@@ -13,11 +12,8 @@ use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Question\ChoiceQuestion;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
-use Symfony\Component\Console\Question\Question;
 
 class ExtractWorklogsCommand extends Command
 {
@@ -45,7 +41,8 @@ class ExtractWorklogsCommand extends Command
     {
         $this
             ->setDescription('Extract Tempo Worklogs')
-            ->addArgument('date', InputArgument::OPTIONAL, 'Start Date', date('Y-m-d'));
+            ->addArgument('date', InputArgument::OPTIONAL, 'Start Date', date('Y-m-d'))
+            ->addArgument('end_date', InputArgument::OPTIONAL, 'End Date', date('Y-m-d'));
     }
 
     protected function getJiraSearch(): Search
@@ -64,32 +61,57 @@ class ExtractWorklogsCommand extends Command
             $_SERVER['TOKEN']
         );
 
+        $date = $input->getArgument('date');
+        $endDate = $input->getArgument('end_date');
+
         $adeoApi = new IssueWorklog([
             'base_url' => $_SERVER['ADEO_JIRA_ENDPOINT'],
             'bearer_token' => $_SERVER['ADEO_JIRA_BEARER_TOKEN']
         ]);
 
         $options = [
-            'updatedFrom' => $input->getArgument('date')
+            'from' => $date,
+            'to' => $endDate
         ];
 
         try {
 
-            $body = $api->get($_SERVER['AUTHOR_ACCOUNT_ID'], $options);
+            $results = [];
+
+            do {
+
+                $body = $api->get($_SERVER['AUTHOR_ACCOUNT_ID'], $options);
+                $results = array_merge($results, $body['results']);
+                if(empty($body['metadata']['next'])) {
+                    break;
+                }
+
+                $options['offset'] = $body['metadata']['offset'] + $body['metadata']['limit'];
+
+            } while(1);
 
         } catch (RequestException $exception) {
             if($exception->hasResponse()) {
                 $responseBody = json_decode($exception->getResponse()->getBody()->getContents(), true);
 
-                foreach($responseBody['errorMessages'] as $errorMessage) {
-                    $output->writeln("<error>" . $errorMessage . "</error>");
+                if(!empty($responseBody['errors'])) {
+                    foreach($responseBody['errors'] as $error) {
+                        $output->writeln("<error>" . $error['message'] . "</error>");
+                    }
                 }
+
+                if(!empty($responseBody['errorMessages'])) {
+                    foreach ($responseBody['errorMessages'] as $errorMessage) {
+                        $output->writeln("<error>" . $errorMessage . "</error>");
+                    }
+                }
+
                 return 1;
             }
             die($exception->getMessage());
         }
 
-        if(!count($body['results'] )) {
+        if(!count($results )) {
             die("Nessun risultato trovato\n");
         }
 
@@ -112,7 +134,9 @@ class ExtractWorklogsCommand extends Command
 
             return $result;
 
-        }, $body['results'] ?? []);
+        }, $results);
+
+        $results = array_values(array_filter($results, fn($issue) => strtotime($issue['date']) >= strtotime($date)));
 
         $issues = array_reduce($results, function($issues, $log) {
             if(!in_array($log['issue_id'], $issues)) {
@@ -130,7 +154,8 @@ class ExtractWorklogsCommand extends Command
             $issues[$issue['id']] = [
                 'id' => $issue['id'],
                 'key' => $issue['key'],
-                'summary' => $issue['fields']['summary']
+                'summary' => $issue['fields']['summary'],
+                'project_key' => $issue['fields']['project']['key']
             ];
         }
 
@@ -153,6 +178,7 @@ class ExtractWorklogsCommand extends Command
         $table = new Table($output);
         $table->setHeaders(array_keys($results[0]))
             ->setRows($results)
+            ->setColumnMaxWidth(7, 100)
             ->render();
 
         $qh = new QuestionHelper();
@@ -165,10 +191,10 @@ class ExtractWorklogsCommand extends Command
             return 0;
         }
 
-        $historyPath = realpath(__DIR__."/../../log_history.json");
+        $historyPath = __DIR__."/../../log_history.json";
 
         if(is_file($historyPath)) {
-            $this->history = json_decode(file_get_contents($historyPath), true);
+            $this->history = json_decode(file_get_contents($historyPath), true) ?? [];
         }
 
         $output->writeln("");
@@ -177,6 +203,7 @@ class ExtractWorklogsCommand extends Command
             if(empty($issue['key_adeo'])) {
                 continue;
             }
+
 
             $output->writeln(sprintf("<comment>%s - Esportazione in corso... </comment>", $issue['key_adeo']));
 
