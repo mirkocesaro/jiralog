@@ -7,6 +7,7 @@ use Dotenv\Dotenv;
 use GuzzleHttp\Exception\RequestException;
 use MirkoCesaro\JiraLog\Console\Api\Jira\IssueWorklog;
 use MirkoCesaro\JiraLog\Console\Api\Jira\Search;
+use MirkoCesaro\JiraLog\Console\Utils;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputArgument;
@@ -84,13 +85,17 @@ class GetWorklogsCommand extends Command
 
             }, $response['worklogs']);
 
+            usort($worklogs, fn($w,$x) => strtotime($w['started']) <=> strtotime($x['started']));
+
             $worklogs = array_values(array_filter($worklogs, fn($worklog) => $worklog['author_email'] == $jiraEmail));
+            $total = array_reduce($worklogs, fn($total, $issue) => $total + $issue['timeSpentSeconds'], 0);
 
             $headers = array_keys($worklogs[0]);
 
             $table = new Table($output);
             $table->setHeaders($headers)
                 ->setHeaderTitle($issueKey)
+                ->setFooterTitle("Totale: " . Utils::formatTime($total))
                 ->setRows($worklogs);
 
             $table->render();

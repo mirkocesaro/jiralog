@@ -7,6 +7,7 @@ use GuzzleHttp\Exception\RequestException;
 use MirkoCesaro\JiraLog\Console\Api\Jira\IssueWorklog;
 use MirkoCesaro\JiraLog\Console\Api\Jira\Search;
 use MirkoCesaro\JiraLog\Console\Api\Tempo\WorklogForUser;
+use MirkoCesaro\JiraLog\Console\Utils;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Helper\Table;
@@ -128,7 +129,7 @@ class ExtractWorklogsCommand extends Command
                 'date' => $result['startDate'],
                 'start' => \DateTime::createFromFormat("H:i:s", $result['startTime'])->format('H:i'),
                 'end' => $endTime->format('H:i'),
-                'formattedTime' => $this->formatTime($result['timeSpentSeconds']),
+                'formattedTime' => Utils::formatTime($result['timeSpentSeconds']),
                 'description' => $result['description']
             ];
 
@@ -180,7 +181,7 @@ class ExtractWorklogsCommand extends Command
         $table->setHeaders(array_keys($results[0]))
             ->setRows($results)
             ->setColumnMaxWidth(7, 100)
-            ->setFooterTitle("Totale: " . $this->formatTime($total))
+            ->setFooterTitle("Totale: " . Utils::formatTime($total))
             ->render();
 
         $qh = new QuestionHelper();
@@ -243,15 +244,4 @@ class ExtractWorklogsCommand extends Command
         return 0;
     }
 
-    public function formatTime(int $seconds): string
-    {
-        $hours = floor($seconds / 3600);
-        $minutes = floor(($seconds % 3600) / 60);
-
-        $formattedTime = [];
-        if($hours) $formattedTime[] = $hours . "h";
-        if($minutes) $formattedTime[] = $minutes . "m";
-
-        return implode(" ", $formattedTime);
-    }
 }
