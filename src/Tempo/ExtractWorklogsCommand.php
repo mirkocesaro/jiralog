@@ -137,6 +137,7 @@ class ExtractWorklogsCommand extends Command
         }, $results);
 
         $results = array_values(array_filter($results, fn($issue) => strtotime($issue['date']) >= strtotime($date)));
+        $total = array_reduce($results, fn($total, $issue) => $total + $issue['time'], 0);
 
         $issues = array_reduce($results, function($issues, $log) {
             if(!in_array($log['issue_id'], $issues)) {
@@ -179,6 +180,7 @@ class ExtractWorklogsCommand extends Command
         $table->setHeaders(array_keys($results[0]))
             ->setRows($results)
             ->setColumnMaxWidth(7, 100)
+            ->setFooterTitle("Totale: " . $this->formatTime($total))
             ->render();
 
         $qh = new QuestionHelper();
