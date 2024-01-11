@@ -15,17 +15,26 @@ Create a symlink to the jiralog script in a shared path, for example
 
      sudo ln -s /path/to/jiralog-project/jiralog /usr/local/bin/jiralog
 
+## Configuration
 
 Copy the `.env.example` file into `.env`.
 
 Then, customize `.env` with your data.
 
-- TEMPO_ENDPOINT: https://api.tempo.io/
+| Command                | Description                                                                                                                                                                            |
+|------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| TEMPO_ENDPOINT         | https://api.tempo.io/<br/>  **Note:** This version supports only [Tempo.io](https://www.tempo.io/) in cloud                                                                            |
+| TOKEN                  | [create the new api integration in your tempo.io app](https://help.tempo.io/cloud/en/tempo-timesheets/developing-with-tempo/using-rest-api-integrations.html) on jira and copy the token |
+| AUTHOR_ACCOUNT_ID      | you can copy it by the url of your jira profile<br/> <br/>![jira profile](docs/jira_profile.png)                                                                                       |
+| JIRA_ENDPOINT          | https://bitbull.atlassian.net/                                                                                                                                                         |
+| JIRA_EMAIL             | your jira e-mail address                                                                                                                                                               |
+| JIRA_TOKEN             | [generate from atlassian account page](https://id.atlassian.com/manage-profile/security/api-tokens)                                                                                    |
+| JIRA_BEARER_TOKEN      | leave empty for use basic authentication                                                                                                                                               |
+| ADEO_JIRA_EMAIL        | your adeo e-mail address                                                                                                                                                               |
+| ADEO_JIRA_TOKEN        | leave empty                                                                                                                                                                            |
+| ADEO_JIRA_ENDPOINT     | https://jira.adeo.com                                                                                                                                                                  |
+| ADEO_JIRA_BEARER_TOKEN | [generate from adeo jira](https://jira.adeo.com/secure/ViewProfile.jspa?selectedTab=com.atlassian.pats.pats-plugin:jira-user-personal-access-tokens)                                   | 
 
-   **Note:** This version supports only [Tempo.io](https://www.tempo.io/) in cloud
-- TOKEN : [create the new api integration in your tempo.io app](https://help.tempo.io/cloud/en/tempo-timesheets/developing-with-tempo/using-rest-api-integrations.html) on jira and copy the token
-- AUTHOR_ACCOUNT_ID : you can copy it by the url of your jira profile
-  ![jira profile](docs/jira_profile.png)
 
 ## Available commands
 
@@ -53,6 +62,38 @@ same example with alias
 
     jiralog tempo:log 2021-08-25 1330 1400 TASK-73 "Comment" -a _Activity_:Analysis
 
+#### Extract worklogs
+Extract worklogs for current user
+
+     jiralog tempo:extract-worklogs <start_date> <end_date>
+
+without arguments will be extracted current day worklogs
+
+
+
+### Jira
+
+#### Search for Issue
+Search for issue with query:
+
+     jiralog jira:issue-picker <query>
+
+Search for issue with JQL:
+
+     jiralog jira:issue-picker <jql> --jql
+
+Search on custom configured jira: (ex ADEO)
+
+     jiralog jira:issue-picker <jql> --jql --prefix <prefix>
+
+
+
+#### Get Worklogs for Issue
+Get worklogs for issue key or ID:
+
+     jiralog jira:worklogs <issues>...
+
+note: you can specify multiple issues
 
 ## Tests
 
