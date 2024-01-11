@@ -101,6 +101,9 @@ note: you can specify multiple issues
 
 
 ## Sources
+
+[jiralog](https://github.com/mirkocesaro/jiralog) by @mirkocesareo
+
 This app is inspired by [Redlog](https://github.com/aleron75/redlog), a repo of [Aleron75](https://github.com/aleron75)
 
 ## License
