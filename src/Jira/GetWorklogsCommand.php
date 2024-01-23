@@ -39,7 +39,8 @@ class GetWorklogsCommand extends Command
     {
         $this
             ->setDescription('Get Worklogs for specified Jira issue')
-            ->addArgument('issues', InputArgument::REQUIRED + InputArgument::IS_ARRAY, 'Issue Key');
+            ->addArgument('issues', InputArgument::REQUIRED + InputArgument::IS_ARRAY, 'Issue Key')
+            ->addOption('email', "e", InputOption::VALUE_OPTIONAL, "User E-Mail", $_SERVER['ADEO_JIRA_EMAIL']);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -49,7 +50,7 @@ class GetWorklogsCommand extends Command
             'bearer_token' => $_SERVER["ADEO_JIRA_BEARER_TOKEN"],
         ]);
 
-        $jiraEmail = $_SERVER['ADEO_JIRA_EMAIL'];
+        $email = $input->getOption('email') ?? $_SERVER['ADEO_JIRA_EMAIL'];
 
         $issues = $input->getArgument("issues");
         foreach($issues as $issueKey) {
@@ -85,10 +86,16 @@ class GetWorklogsCommand extends Command
 
             }, $response['worklogs']);
 
-            usort($worklogs, fn($w,$x) => strtotime($w['started']) <=> strtotime($x['started']));
+            usort($worklogs, fn($w, $x) => strtotime($w['started']) <=> strtotime($x['started']));
 
-            $worklogs = array_values(array_filter($worklogs, fn($worklog) => $worklog['author_email'] == $jiraEmail));
+            if($email !== 'all') {
+                $worklogs = array_values(array_filter($worklogs, fn($worklog) => $worklog['author_email'] == $email));
+            }
             $total = array_reduce($worklogs, fn($total, $issue) => $total + $issue['timeSpentSeconds'], 0);
+
+            if(empty($worklogs)) {
+                continue;
+            }
 
             $headers = array_keys($worklogs[0]);
 

@@ -12,7 +12,7 @@ class IssueWorklog extends AbstractApi
             "GET",
             sprintf("/rest/api/2/issue/%s/worklog", $issueIdOrKey),
             [
-                'query' => $options
+                'body' => json_encode($options)
             ]
         );
 

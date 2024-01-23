@@ -80,7 +80,7 @@ class IssuePickerCommand extends Command
             if($exception->hasResponse()) {
                 $responseBody = json_decode($exception->getResponse()->getBody()->getContents(), true);
 
-                foreach($responseBody['errorMessages'] as $errorMessage) {
+                foreach($responseBody['errorMessages'] ?? ["Errore del Server"] as $errorMessage) {
                     $output->writeln("<error>" . $errorMessage . "</error>");
                 }
                 return 1;

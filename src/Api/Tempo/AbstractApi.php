@@ -23,4 +23,8 @@ abstract class AbstractApi
         ]);
     }
 
+    public function getRequest($url)
+    {
+        return $this->getClient()->get($url);
+    }
 }

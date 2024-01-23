@@ -9,7 +9,7 @@ class Search extends AbstractApi
      * @return array
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function execute(string $jql): array
+    public function execute(string $jql, array $options = []): array
     {
         $client = $this->getClient();
 
@@ -19,16 +19,8 @@ class Search extends AbstractApi
             [
                 'body' => json_encode(
                     [
-                        'jql' => $jql,
-                        'fields' => [
-                            'key',
-                            'status',
-                            'updated',
-                            'timespent',
-                            'summary',
-                            'project'
-                        ]
-                    ]
+                        'jql' => $jql
+                    ] + $options
                 )
             ]
         );

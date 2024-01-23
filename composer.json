@@ -21,7 +21,8 @@
         "guzzlehttp/guzzle":"^7.0",
         "vlucas/phpdotenv": "^5.3@dev",
         "symfony/var-dumper": "6.4.x-dev",
-        "ext-json": "*"
+        "ext-json": "*",
+        "google/apiclient": "2.x-dev"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.5",

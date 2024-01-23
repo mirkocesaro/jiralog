@@ -26,4 +26,20 @@ class WorklogForUser extends AbstractApi
 
     }
 
+    public function getByAccount(string $accountKey, array $options = []): array
+    {
+        $client = $this->getClient();
+
+        $response = $client->request(
+            'GET',
+            sprintf("/4/worklogs/account/%s", $accountKey),
+            [
+                'query' => $options
+            ]
+        );
+
+        return json_decode($response->getBody()->getContents(), true);
+
+    }
+
 }
