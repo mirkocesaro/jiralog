@@ -1,6 +1,5 @@
 /.env
 /.phpunit.result.cache
-/composer.lock
 /vendor/
 /.idea
 /.php_cs.cache
