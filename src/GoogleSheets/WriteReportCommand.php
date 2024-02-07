@@ -8,9 +8,9 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class PlaygroundCommand extends Command
+class WriteReportCommand extends Command
 {
-    protected static $defaultName = 'gsheets:playground';
+    protected static $defaultName = 'gsheets:write-report';
     protected Dotenv $dotEnv;
 
     public function __construct(string $name = null)

@@ -6,7 +6,6 @@ use Dotenv\Dotenv;
 use MirkoCesaro\JiraLog\Console\Api\Jira\Search;
 use MirkoCesaro\JiraLog\Console\Api\Jira\User;
 use MirkoCesaro\JiraLog\Console\Api\Tempo\Account;
-use MirkoCesaro\JiraLog\Console\Api\Tempo\AccountLinks;
 use MirkoCesaro\JiraLog\Console\Api\Tempo\Periods;
 use MirkoCesaro\JiraLog\Console\Api\Tempo\WorkAttributes;
 use MirkoCesaro\JiraLog\Console\Api\Tempo\Worklog;
@@ -15,21 +14,17 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class ActivityReportCommand extends Command
+class ActivityReportTmitCommand extends Command
 {
-    /** Issue Key,Issue summary,Hours,Work date,User Account ID,Full name,Tempo Team,Period,Account Key,Account Name,Account Lead ID,Account Category,Account Customer,Activity Name,Component,All Components,Version Name,Issue Type,Issue Status,Project Key,Project Name,Epic,Epic Link,Work Description,Parent Key,Reporter ID,External Hours,Billed Hours,Issue Original Estimate,Issue Remaining Estimate,External Jira Key,External Jira Epic,External Jira Id,Activity,Date created,Date updated */
 
-    protected static $defaultName = 'tempo:activity-report';
+    protected static $defaultName = 'tempo:activity-report-tmit';
     protected Dotenv $dotEnv;
 
     protected array $issues;
     protected array $account;
-    protected array $accounts;
     protected array $users;
 
     protected array $workAttributes;
-
-    protected array $projectAccounts = [];
 
     public function __construct(string $name = null)
     {
@@ -66,15 +61,8 @@ class ActivityReportCommand extends Command
     {
         $worklogApi = new Worklog($_SERVER['TEMPO_ENDPOINT'], $_SERVER['TOKEN']);
         $accountApi = new Account($_SERVER['TEMPO_ENDPOINT'], $_SERVER['TOKEN']);
-        $accountLinksApi = new AccountLinks($_SERVER['TEMPO_ENDPOINT'], $_SERVER['TOKEN']);
         $workAttributesApi = new WorkAttributes($_SERVER['TEMPO_ENDPOINT'], $_SERVER['TOKEN']);
         $periodsApi = new Periods($_SERVER['TEMPO_ENDPOINT'], $_SERVER['TOKEN']);
-
-        $output->writeln("Estrazione Accounts...");
-        $accounts = $accountApi->get(['offset' => 0,'limit' => 1000])['results'];
-        foreach($accounts as $account) {
-            $this->accounts[$account['id']] = $account;
-        }
 
         $output->writeln("Estrazione Work Attributes...");
         $workAttributes = $workAttributesApi->get();
@@ -97,7 +85,7 @@ class ActivityReportCommand extends Command
 
             $output->writeln(sprintf("[Pagina %s] - Estrazione in corso...", $page));
 
-            $body = $worklogApi->get($options);
+            $body = $worklogApi->getByAccount($this->account['key'], $options);
 
             $results = array_merge($results, $body['results']);
 
@@ -121,16 +109,10 @@ class ActivityReportCommand extends Command
 
         $epics = [];
         foreach($this->getIssuesByKey($this->issues) as $issue) {
-
+            $this->issues[$issue['id']] = $issue;
             if(!empty($issue['fields']['parent']['id'])) {
                 $epics[] = $issue['fields']['parent']['id'];
             }
-            if(!empty($issue['fields']['customfield_10122'])) {
-                $issue['account'] = $this->accounts[$issue['fields']['customfield_10122']['id']];
-
-            }
-            $this->issues[$issue['id']] = $issue;
-
         }
 
         foreach($this->getIssuesByKey(array_unique($epics)) as $issue) {
@@ -139,7 +121,7 @@ class ActivityReportCommand extends Command
 
         $results = (array_map([$this, 'mapResults'], $results));
 
-        $h = fopen("report.csv", "w");
+        $h = fopen("report_tmit.csv", "w");
 
         fputcsv($h, array_keys($results[0]));
         foreach($results as $result) {
@@ -224,7 +206,6 @@ class ActivityReportCommand extends Command
             $attributes[$attribute['key']] = $this->workAttributes[$attribute['key']][$attribute['value']] ?? $attribute['value'];
         }
 
-        $account = $issue['account'];
 
         $parsedResult = [
             "Issue Key " => $issue['key'],
@@ -235,11 +216,11 @@ class ActivityReportCommand extends Command
             "Full name" => $user['displayName'],
             "Tempo Team" => '',
             "Period" => '',
-            "Account Key" => $account['key'],
-            "Account Name" => $account['name'],
+            "Account Key" => $this->account['key'],
+            "Account Name" => $this->account['name'],
             "Account Status" => '',
-            "Account Lead ID" => $account['lead']['accountId'],
-            "Account Category" => $account['category']['name'],
+            "Account Lead ID" => $this->account['lead']['accountId'],
+            "Account Category" => $this->account['category']['name'],
             "Account Category Type" => '',
             "Account Customer" => '',
             "Account Contact ID" => '',

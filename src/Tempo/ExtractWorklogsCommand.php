@@ -6,7 +6,7 @@ use Dotenv\Dotenv;
 use GuzzleHttp\Exception\RequestException;
 use MirkoCesaro\JiraLog\Console\Api\Jira\IssueWorklog;
 use MirkoCesaro\JiraLog\Console\Api\Jira\Search;
-use MirkoCesaro\JiraLog\Console\Api\Tempo\WorklogForUser;
+use MirkoCesaro\JiraLog\Console\Api\Tempo\Worklog;
 use MirkoCesaro\JiraLog\Console\Utils;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\QuestionHelper;
@@ -57,7 +57,7 @@ class ExtractWorklogsCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $api = new WorklogForUser(
+        $api = new Worklog(
             $_SERVER['TEMPO_ENDPOINT'],
             $_SERVER['TOKEN']
         );
@@ -81,7 +81,7 @@ class ExtractWorklogsCommand extends Command
 
             do {
 
-                $body = $api->get($_SERVER['AUTHOR_ACCOUNT_ID'], $options);
+                $body = $api->getByUser($_SERVER['AUTHOR_ACCOUNT_ID'], $options);
                 $results = array_merge($results, $body['results']);
                 if(empty($body['metadata']['next'])) {
                     break;
@@ -194,6 +194,12 @@ class ExtractWorklogsCommand extends Command
             return 0;
         }
 
+        $auto = $qh->ask(
+            $input,
+            $output,
+            new ConfirmationQuestion("Procedo senza chiedere conferma per ogni worklog? <comment>[y/N]</comment>", false)
+        );
+
         $historyPath = __DIR__."/../../log_history.json";
 
         if(is_file($historyPath)) {
@@ -211,16 +217,18 @@ class ExtractWorklogsCommand extends Command
             $output->writeln(sprintf("<comment>%s - Esportazione in corso... </comment>", $issue['key_adeo']));
 
             if(!empty($this->history[$issue['worklogId']])) {
-                $output->writeln("<info>Worklog già esportato</info>");
+                $output->writeln(sprintf("<info>%s - Worklog già esportato (ID: %s)</info>\n", $issue['key_adeo'], $this->history[$issue['worklogId']]));
                 continue;
             }
 
-            if(!$qh->ask(
-                $input,
-                $output,
-                new ConfirmationQuestion("Procedo? <comment>[y/N]</comment>", false)
-            )) {
-                continue;
+            if(!$auto) {
+                if (!$qh->ask(
+                    $input,
+                    $output,
+                    new ConfirmationQuestion("Procedo? <comment>[y/N]</comment>", false)
+                )) {
+                    continue;
+                }
             }
 
             $payload = [
@@ -234,7 +242,7 @@ class ExtractWorklogsCommand extends Command
             $this->history[$issue['worklogId']] = $adeoWorklog['id'];
 
             $output->writeln([
-                "<info>Worklog creato con ID: " . $adeoWorklog['id'] . "</info>",
+                sprintf("<info>%s - Worklog creato con ID: %s</info>", $issue['key_adeo'], $adeoWorklog['id']),
                 ""
             ]);
         }

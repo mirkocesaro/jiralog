@@ -17,7 +17,9 @@ try {
     $application->add(new \MirkoCesaro\JiraLog\Console\Jira\GetWorklogsCommand());
     $application->add(new \MirkoCesaro\JiraLog\Console\Jira\GetWorklogsByDayCommand());
     $application->add(new \MirkoCesaro\JiraLog\Console\Tempo\ActivityReportCommand());
-    $application->add(new \MirkoCesaro\JiraLog\Console\GoogleSheets\PlaygroundCommand());
+    $application->add(new \MirkoCesaro\JiraLog\Console\Tempo\ActivityReportTmitCommand());
+    $application->add(new \MirkoCesaro\JiraLog\Console\GoogleSheets\WriteReportCommand());
+    $application->add(new \MirkoCesaro\JiraLog\Console\GoogleSheets\WriteReportTmitCommand());
 
 }catch (Dotenv\Exception\ValidationException $exception){
     print_r($exception->getMessage());

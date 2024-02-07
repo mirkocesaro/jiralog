@@ -75,9 +75,7 @@ class GetWorklogsByDayCommand extends Command
 
                 $output->writeln(sprintf("Estraggo worklogs per %s...", $issueKey));
 
-                $response = $api->get($issueKey, [
-                    'maxResults' => 2,
-                ]);
+                $response = $api->get($issueKey);
 
             } catch (RequestException $exception) {
                 if ($exception->hasResponse()) {

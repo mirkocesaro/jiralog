@@ -2,15 +2,31 @@
 
 namespace MirkoCesaro\JiraLog\Console\Api\Tempo;
 
-class WorklogForUser extends AbstractApi
+class Worklog extends AbstractApi
 {
+
+    public function get(array $options = []): array
+    {
+        $client = $this->getClient();
+
+        $response = $client->request(
+            'GET',
+            "/4/worklogs",
+            [
+                'query' => $options
+            ]
+        );
+
+        return json_decode($response->getBody()->getContents(), true);
+    }
+
     /**
      * @param string $userId
      * @param array $options
      * @return array
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function get(string $userId, array $options = []): array
+    public function getByUser(string $userId, array $options = []): array
     {
         $client = $this->getClient();
 
