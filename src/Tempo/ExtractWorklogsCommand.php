@@ -13,6 +13,7 @@ use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 
@@ -43,7 +44,8 @@ class ExtractWorklogsCommand extends Command
         $this
             ->setDescription('Extract Tempo Worklogs')
             ->addArgument('date', InputArgument::OPTIONAL, 'Start Date', date('Y-m-d'))
-            ->addArgument('end_date', InputArgument::OPTIONAL, 'End Date', date('Y-m-d'));
+            ->addArgument('end_date', InputArgument::OPTIONAL, 'End Date', date('Y-m-d'))
+            ->addOption('no-extract', 'N', InputOption::VALUE_NONE, "Show logs without exporting");
     }
 
     protected function getJiraSearch(): Search
@@ -93,15 +95,20 @@ class ExtractWorklogsCommand extends Command
 
         } catch (RequestException $exception) {
             if($exception->hasResponse()) {
-                $responseBody = json_decode($exception->getResponse()->getBody()->getContents(), true);
+                $response = $exception->getResponse();
+
+                if($response->getStatusCode() === 401) {
+                    $output->writeln("Errore di autenticazione. Verifica che il token TEMPO sia corretto e non scaduto!");
+                }
+
+                $rawBody = $exception->getResponse()->getBody()->getContents();
+                $responseBody = json_decode($rawBody, true);
 
                 if(!empty($responseBody['errors'])) {
                     foreach($responseBody['errors'] as $error) {
                         $output->writeln("<error>" . $error['message'] . "</error>");
                     }
-                }
-
-                if(!empty($responseBody['errorMessages'])) {
+                } elseif(!empty($responseBody['errorMessages'])) {
                     foreach ($responseBody['errorMessages'] as $errorMessage) {
                         $output->writeln("<error>" . $errorMessage . "</error>");
                     }
@@ -109,6 +116,7 @@ class ExtractWorklogsCommand extends Command
 
                 return 1;
             }
+
             die($exception->getMessage());
         }
 
@@ -151,14 +159,38 @@ class ExtractWorklogsCommand extends Command
 
         $issues = array_fill_keys($issues, null);
 
-        foreach($this->getJiraSearch()->execute(sprintf("id in (%s)", implode(',', array_keys($issues))))['issues'] as $issue) {
+        try {
 
-            $issues[$issue['id']] = [
-                'id' => $issue['id'],
-                'key' => $issue['key'],
-                'summary' => $issue['fields']['summary'],
-                'project_key' => $issue['fields']['project']['key']
-            ];
+
+            foreach($this->getJiraSearch()->execute(sprintf("id in (%s)", implode(',', array_keys($issues))))['issues'] as $issue) {
+
+                $issues[$issue['id']] = [
+                    'id' => $issue['id'],
+                    'key' => $issue['key'],
+                    'summary' => $issue['fields']['summary'],
+                    'project_key' => $issue['fields']['project']['key']
+                ];
+            }
+
+        } catch (RequestException $exception) {
+
+            if($exception->hasResponse()) {
+
+                $rawBody = $exception->getResponse()->getBody()->getContents();
+                $responseBody = json_decode($rawBody, true);
+
+                if(!empty($responseBody['errors'])) {
+                    foreach($responseBody['errors'] as $error) {
+                        $output->writeln("<error>" . $error['message'] . "</error>");
+                    }
+                } elseif(!empty($responseBody['errorMessages'])) {
+                    foreach ($responseBody['errorMessages'] as $errorMessage) {
+                        $output->writeln("<error>" . $errorMessage . "</error>");
+                    }
+                }
+
+                return 1;
+            }
         }
 
         $results = array_map(function($result) use($issues){
@@ -183,6 +215,10 @@ class ExtractWorklogsCommand extends Command
             ->setColumnMaxWidth(7, 100)
             ->setFooterTitle("Totale: " . Utils::formatTime($total))
             ->render();
+
+        if($input->getOption('no-extract')) {
+            return 0;
+        }
 
         $qh = new QuestionHelper();
 
@@ -240,6 +276,7 @@ class ExtractWorklogsCommand extends Command
             $adeoWorklog = $adeoApi->create($issue['key_adeo'], $payload);
 
             $this->history[$issue['worklogId']] = $adeoWorklog['id'];
+            file_put_contents($historyPath, json_encode($this->history, JSON_PRETTY_PRINT));
 
             $output->writeln([
                 sprintf("<info>%s - Worklog creato con ID: %s</info>", $issue['key_adeo'], $adeoWorklog['id']),

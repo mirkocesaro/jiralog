@@ -215,6 +215,8 @@ class ActivityReportTmitCommand extends Command
             "User Account ID" => $result['author']['accountId'],
             "Full name" => $user['displayName'],
             "Tempo Team" => '',
+            "Program" => '',
+            "Program Manager ID" => '',
             "Period" => '',
             "Account Key" => $this->account['key'],
             "Account Name" => $this->account['name'],

@@ -122,7 +122,10 @@ class ActivityReportCommand extends Command
         $epics = [];
         foreach($this->getIssuesByKey($this->issues) as $issue) {
 
-            if(!empty($issue['fields']['parent']['id'])) {
+            if(
+                !empty($issue['fields']['parent']['id']) &&
+                empty($this->issues[$issue['fields']['parent']['id']])
+            ) {
                 $epics[] = $issue['fields']['parent']['id'];
             }
             if(!empty($issue['fields']['customfield_10122'])) {
@@ -134,6 +137,11 @@ class ActivityReportCommand extends Command
         }
 
         foreach($this->getIssuesByKey(array_unique($epics)) as $issue) {
+
+            if(!empty($issue['fields']['customfield_10122'])) {
+                $issue['account'] = $this->accounts[$issue['fields']['customfield_10122']['id']];
+
+            }
             $this->issues[$issue['id']] = $issue;
         }
 
@@ -224,7 +232,10 @@ class ActivityReportCommand extends Command
             $attributes[$attribute['key']] = $this->workAttributes[$attribute['key']][$attribute['value']] ?? $attribute['value'];
         }
 
-        $account = $issue['account'];
+        $account = $issue['account'] ?? null;
+        if(empty($account)) {
+            echo sprintf("Attenzione: Account non trovato per la issue: %s\n", $issue['key']);
+        }
 
         $parsedResult = [
             "Issue Key " => $issue['key'],
@@ -234,6 +245,8 @@ class ActivityReportCommand extends Command
             "User Account ID" => $result['author']['accountId'],
             "Full name" => $user['displayName'],
             "Tempo Team" => '',
+            "Program" => '',
+            "Program Manager ID" => '',
             "Period" => '',
             "Account Key" => $account['key'],
             "Account Name" => $account['name'],
