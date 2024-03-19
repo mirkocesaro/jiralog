@@ -249,11 +249,50 @@ class ExtractWorklogsCommand extends Command
                 continue;
             }
 
+            $payload = [
+                'comment' => $issue['description'],
+                'started' => (new \DateTime($issue['date'] . ' ' .$issue['start'], new \DateTimeZone("Europe/Rome")))->format("Y-m-d\TH:i:s.uO"),
+                'timeSpent' => $issue['formattedTime']
+            ];
 
             $output->writeln(sprintf("<comment>%s - Esportazione in corso... </comment>", $issue['key_adeo']));
 
             if(!empty($this->history[$issue['worklogId']])) {
                 $output->writeln(sprintf("<info>%s - Worklog già esportato (ID: %s)</info>\n", $issue['key_adeo'], $this->history[$issue['worklogId']]));
+
+                try {
+                    $existingWorkLog = $adeoApi->getById($issue['key_adeo'], $this->history[$issue['worklogId']]);
+
+                    $worklogWasUpdated = $payload['comment'] != $existingWorkLog['comment'] ||
+                        $payload['timeSpent'] != $existingWorkLog['timeSpent'] ||
+                        strtotime($payload['started']) != strtotime($existingWorkLog['started']);
+
+                } catch (\Exception $exception) {
+
+                    $output->writeln(
+                        sprintf(
+                            "<error>Si è verificato un errore durante la verifica del worklog: %s</error>",
+                            $exception->getMessage()
+                        )
+                    );
+                    $worklogWasUpdated = false;
+                }
+
+
+                if (!$worklogWasUpdated || !$qh->ask(
+                    $input,
+                    $output,
+                    new ConfirmationQuestion("Il worklog è stato modificato dall'ultima esportazione. Vuoi aggiornare il worklog esterno? <comment>[y/N]</comment>", false)
+                )) {
+                    continue;
+                }
+
+                $adeoApi->update($issue['key_adeo'], $this->history[$issue['worklogId']], $payload);
+                $output->writeln([
+                    sprintf("<info>%s - Worklog aggiornato!</info>", $issue['key_adeo']),
+                    ""
+                ]);
+
                 continue;
             }
 
@@ -266,12 +305,6 @@ class ExtractWorklogsCommand extends Command
                     continue;
                 }
             }
-
-            $payload = [
-                'comment' => $issue['description'],
-                'started' => (new \DateTime($issue['date'] . ' ' .$issue['start'], new \DateTimeZone("Europe/Rome")))->format("Y-m-d\TH:i:s.uO"),
-                'timeSpent' => $issue['formattedTime']
-            ];
 
             $adeoWorklog = $adeoApi->create($issue['key_adeo'], $payload);
 

@@ -45,4 +45,39 @@ class IssueWorklog extends AbstractApi
 
         return json_decode($response->getBody()->getContents(), true);
     }
+
+    public function getById(string $issueIdOrKey, string $worklogId): array
+    {
+        $client = $this->getClient();
+
+        $url = sprintf("/rest/api/2/issue/%s/worklog/%s", $issueIdOrKey, $worklogId);
+
+        $response = $client->request(
+            'GET',
+            $url,
+        );
+        return json_decode($response->getBody()->getContents(), true);
+
+    }
+
+    public function update(string $issueIdOrKey, string $worklogId, array $body)
+    {
+        $client = $this->getClient();
+
+        $url = sprintf("/rest/api/2/issue/%s/worklog/%s", $issueIdOrKey, $worklogId);
+        $url .= "?" . http_build_query([
+                'adjustEstimate' => 'leave',
+                'notifyUsers' => 'false'
+            ]);
+
+        $response = $client->request(
+            'PUT',
+            $url,
+            [
+                'body' => json_encode($body)
+            ]
+        );
+
+        return json_decode($response->getBody()->getContents(), true);
+    }
 }
