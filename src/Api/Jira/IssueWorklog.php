@@ -2,6 +2,8 @@
 
 namespace MirkoCesaro\JiraLog\Console\Api\Jira;
 
+use GuzzleHttp\Exception\RequestException;
+
 class IssueWorklog extends AbstractApi
 {
     public function get(string $issueIdOrKey, array $options = []): array
@@ -17,6 +19,30 @@ class IssueWorklog extends AbstractApi
         );
 
         return json_decode($response->getBody()->getContents(), true);
+    }
+
+    public function delete(string $issueIdOrKey, string $workLogId): ?array
+    {
+        $client = $this->getClient();
+
+        $url = sprintf("/rest/api/2/issue/%s/worklog/%s", $issueIdOrKey, $workLogId);
+        $url .= "?" . http_build_query([
+                'adjustEstimate' => 'leave',
+                'notifyUsers' => 'false'
+            ]);
+
+        try {
+            $response = $client->request(
+                "DELETE",
+                $url
+            );
+            return json_decode($response->getBody()->getContents(), true);
+        } catch (RequestException $exception) {
+            if ($exception->hasResponse()) {
+                return json_decode($exception->getResponse()->getBody()->getContents(), true);
+            }
+            throw $exception;
+        }
     }
 
     /**

@@ -16,6 +16,7 @@ try {
     $application->add(new \MirkoCesaro\JiraLog\Console\Tempo\ExtractWorklogsCommand());
     $application->add(new \MirkoCesaro\JiraLog\Console\Jira\GetWorklogsCommand());
     $application->add(new \MirkoCesaro\JiraLog\Console\Jira\GetWorklogsByDayCommand());
+    $application->add(new \MirkoCesaro\JiraLog\Console\Jira\DeleteWorklogCommand());
     $application->add(new \MirkoCesaro\JiraLog\Console\Tempo\ActivityReportCommand());
     $application->add(new \MirkoCesaro\JiraLog\Console\Tempo\ActivityReportTmitCommand());
     $application->add(new \MirkoCesaro\JiraLog\Console\GoogleSheets\WriteReportCommand());

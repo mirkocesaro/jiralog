@@ -44,7 +44,8 @@ class ExtractWorklogsCommand extends Command
         $this
             ->setDescription('Extract Tempo Worklogs')
             ->addArgument('date', InputArgument::OPTIONAL, 'Start Date', date('Y-m-d'))
-            ->addArgument('end_date', InputArgument::OPTIONAL, 'End Date', date('Y-m-d'))
+            ->addArgument('end_date', InputArgument::OPTIONAL, 'End Date', null)
+            ->addOption('silent', 's', InputOption::VALUE_NONE, 'Silent')
             ->addOption('no-extract', 'N', InputOption::VALUE_NONE, "Show logs without exporting");
     }
 
@@ -65,7 +66,8 @@ class ExtractWorklogsCommand extends Command
         );
 
         $date = $input->getArgument('date');
-        $endDate = $input->getArgument('end_date');
+        $endDate = $input->getArgument('end_date') ?? $date;
+        $silentMode = $input->getOption('silent');
 
         $adeoApi = new IssueWorklog([
             'base_url' => $_SERVER['ADEO_JIRA_ENDPOINT'],
@@ -230,7 +232,7 @@ class ExtractWorklogsCommand extends Command
             return 0;
         }
 
-        $auto = $qh->ask(
+        $auto = $silentMode || $qh->ask(
             $input,
             $output,
             new ConfirmationQuestion("Procedo senza chiedere conferma per ogni worklog? <comment>[y/N]</comment>", false)
