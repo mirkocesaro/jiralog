@@ -2,6 +2,7 @@
 
 namespace MirkoCesaro\JiraLog\Console\Api\Jira;
 
+use Dotenv\Dotenv;
 use GuzzleHttp\Client as HttpClient;
 
 abstract class AbstractApi
@@ -9,6 +10,7 @@ abstract class AbstractApi
     private string $apiToken;
     private string $baseUrl;
     private string $authType = 'Basic';
+    protected Dotenv $env;
 
     public function __construct(array $config)
     {
@@ -22,6 +24,15 @@ abstract class AbstractApi
             $this->apiToken = $config['bearer_token'];
             $this->authType = 'Bearer';
         }
+
+        $this->env = Dotenv::createImmutable(
+            __DIR__ .
+            DIRECTORY_SEPARATOR . '..' .
+            DIRECTORY_SEPARATOR . '..' .
+            DIRECTORY_SEPARATOR . '..'
+        );
+
+        $this->env->load();
     }
 
     protected function getAuthorization(): string
@@ -33,13 +44,18 @@ abstract class AbstractApi
     {
         return new HttpClient([
             'base_uri' => $this->baseUrl,
-            'timeout' => 10.0,
+            'timeout' => $this->getTimeout(),
             'headers' => [
                 'Authorization' => $this->getAuthorization(),
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json'
             ]
         ]);
+    }
+
+    public function getTimeout(): int
+    {
+        return (int)($_SERVER['JIRA_API_TIMEOUT'] ?? 10);
     }
 
 }
