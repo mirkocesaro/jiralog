@@ -9,7 +9,7 @@ use MirkoCesaro\JiraLog\Console\Exception\NotValidLogException;
 
 class LogMessage
 {
-    protected string $issueKey;
+    protected string $issueId;
     protected int $timeSpentSeconds;
     protected $startDate;
     protected $startTime;
@@ -18,7 +18,7 @@ class LogMessage
     protected $attributes;
 
     public function __construct(
-        string $issueKey,
+        string $issueId,
         \DateTime $startDate,
         \DateTime $startTime,
         int $timeSpentSeconds,
@@ -26,7 +26,7 @@ class LogMessage
         array $attributes,
         string $authorAccountId
     ) {
-        $this->issueKey = $issueKey;
+        $this->issueId = $issueId;
         $this->startDate = $startDate;
         $this->timeSpentSeconds = $timeSpentSeconds;
         $this->description = $description;
@@ -36,7 +36,7 @@ class LogMessage
     }
 
     public static function createLog(
-        string $issueKey,
+        string $issueId,
         string $date,
         string $startTime,
         string $endTime,
@@ -80,7 +80,7 @@ class LogMessage
         }
 
         return new self(
-            $issueKey,
+            $issueId,
             $date,
             $timeStart,
             $seconds,
@@ -93,7 +93,7 @@ class LogMessage
     public function toArray(): array
     {
         return [
-            "issueKey"=> $this->issueKey,
+            "issueId"=> $this->issueId,
             "timeSpentSeconds" =>$this->timeSpentSeconds,
             "startDate"=> $this->startDate->format('Y-m-d'),
             "startTime" => $this->startTime->format('H:i:00'),

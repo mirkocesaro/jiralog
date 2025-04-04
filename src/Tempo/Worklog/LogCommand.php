@@ -12,6 +12,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use MirkoCesaro\JiraLog\Console\Api\Jira\Issue;
 
 class LogCommand extends Command
 {
@@ -67,7 +68,33 @@ class LogCommand extends Command
         $attributes = $input->getOption('attributes');
 
         try {
-            $log = LogMessage::createLog($issue, $date, $startTime, $endTime, $comment, $attributes, $_SERVER['AUTHOR_ACCOUNT_ID']);
+            $issueJiraApi = new Issue([
+                'base_url' => $_SERVER["JIRA_ENDPOINT"],
+                'username' => $_SERVER["JIRA_EMAIL"],
+                'password' => $_SERVER["JIRA_TOKEN"],
+                'bearer_token' => $_SERVER["JIRA_BEARER_TOKEN"],
+            ]);
+
+            try {
+                $issueId = $issueJiraApi->execute($issue);
+            } catch (RequestException $exception) {
+                if($exception->hasResponse()) {
+                    $responseBody = json_decode($exception->getResponse()->getBody()->getContents(), true);
+
+                    foreach($responseBody['errorMessages'] ?? ["Errore del Server"] as $errorMessage) {
+                        $output->writeln("<error>" . $errorMessage . "</error>");
+                    }
+                    return 1;
+                }
+                die($exception->getMessage());
+            }
+
+            if (!$issueId) {
+                $output->writeln('No issue id found');
+                return Command::FAILURE;
+            }
+
+            $log = LogMessage::createLog($issueId, $date, $startTime, $endTime, $comment, $attributes, $_SERVER['AUTHOR_ACCOUNT_ID']);
 
             $client = new HttpClient([
                 'base_uri' => $_SERVER['TEMPO_ENDPOINT'],
@@ -80,7 +107,7 @@ class LogCommand extends Command
 
             $response = $client->request(
                 'POST',
-                '/core/3/worklogs',
+                '/4/worklogs',
                 ['json' => $log->toArray()]
             );
             return Command::SUCCESS;
