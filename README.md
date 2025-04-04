@@ -29,11 +29,7 @@ Then, customize `.env` with your data.
 | JIRA_ENDPOINT          | https://bitbull.atlassian.net/                                                                                                                                                         |
 | JIRA_EMAIL             | your jira e-mail address                                                                                                                                                               |
 | JIRA_TOKEN             | [generate from atlassian account page](https://id.atlassian.com/manage-profile/security/api-tokens)                                                                                    |
-| JIRA_BEARER_TOKEN      | leave empty for use basic authentication                                                                                                                                               |
-| ADEO_JIRA_EMAIL        | your adeo e-mail address                                                                                                                                                               |
-| ADEO_JIRA_TOKEN        | leave empty                                                                                                                                                                            |
-| ADEO_JIRA_ENDPOINT     | https://jira.adeo.com                                                                                                                                                                  |
-| ADEO_JIRA_BEARER_TOKEN | [generate from adeo jira](https://jira.adeo.com/secure/ViewProfile.jspa?selectedTab=com.atlassian.pats.pats-plugin:jira-user-personal-access-tokens)                                   | 
+| JIRA_BEARER_TOKEN      | leave empty for use basic authentication                                                                                                                                               | 
 
 
 ## Available commands

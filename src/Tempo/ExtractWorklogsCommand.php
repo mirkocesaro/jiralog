@@ -4,18 +4,15 @@ namespace MirkoCesaro\JiraLog\Console\Tempo;
 
 use Dotenv\Dotenv;
 use GuzzleHttp\Exception\RequestException;
-use MirkoCesaro\JiraLog\Console\Api\Jira\IssueWorklog;
 use MirkoCesaro\JiraLog\Console\Api\Jira\Search;
 use MirkoCesaro\JiraLog\Console\Api\Tempo\Worklog;
 use MirkoCesaro\JiraLog\Console\Utils;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Question\ConfirmationQuestion;
 
 class ExtractWorklogsCommand extends Command
 {
@@ -68,11 +65,6 @@ class ExtractWorklogsCommand extends Command
         $date = $input->getArgument('date');
         $endDate = $input->getArgument('end_date') ?? $date;
         $silentMode = $input->getOption('silent');
-
-        $adeoApi = new IssueWorklog([
-            'base_url' => $_SERVER['ADEO_JIRA_ENDPOINT'],
-            'bearer_token' => $_SERVER['ADEO_JIRA_BEARER_TOKEN']
-        ]);
 
         $options = [
             'from' => $date,
@@ -134,7 +126,6 @@ class ExtractWorklogsCommand extends Command
             $result = [
                 'worklogId' => $result['tempoWorklogId'],
                 'issue_id' => $result['issue']['id'],
-                'key_adeo' => '',
                 'time' => $result['timeSpentSeconds'],
                 'date' => $result['startDate'],
                 'start' => \DateTime::createFromFormat("H:i:s", $result['startTime'])->format('H:i'),
@@ -200,9 +191,6 @@ class ExtractWorklogsCommand extends Command
             $issue = $issues[$result['issue_id']];
             if($issue) {
                 $issueKey = explode(' ', $issue['summary'])[0];
-                if (str_contains($issueKey, "BMITFOX-") || str_contains($issueKey, "BMITB2C")) {
-                    $result['key_adeo'] = $issueKey;
-                }
             }
             unset($result['issue_id']);
 
@@ -217,109 +205,6 @@ class ExtractWorklogsCommand extends Command
             ->setColumnMaxWidth(7, 100)
             ->setFooterTitle("Totale: " . Utils::formatTime($total))
             ->render();
-
-        if($input->getOption('no-extract')) {
-            return 0;
-        }
-
-        $qh = new QuestionHelper();
-
-        if(!$qh->ask(
-            $input,
-            $output,
-            new ConfirmationQuestion("Esportare il log sul jira di adeo? <comment>[y/N]</comment>", false)
-        )) {
-            return 0;
-        }
-
-        $auto = $silentMode || $qh->ask(
-            $input,
-            $output,
-            new ConfirmationQuestion("Procedo senza chiedere conferma per ogni worklog? <comment>[y/N]</comment>", false)
-        );
-
-        $historyPath = __DIR__."/../../log_history.json";
-
-        if(is_file($historyPath)) {
-            $this->history = json_decode(file_get_contents($historyPath), true) ?? [];
-        }
-
-        $output->writeln("");
-
-        foreach($results as $issue) {
-            if(empty($issue['key_adeo'])) {
-                continue;
-            }
-
-            $payload = [
-                'comment' => $issue['description'],
-                'started' => (new \DateTime($issue['date'] . ' ' .$issue['start'], new \DateTimeZone("Europe/Rome")))->format("Y-m-d\TH:i:s.uO"),
-                'timeSpent' => $issue['formattedTime']
-            ];
-
-            $output->writeln(sprintf("<comment>%s - Esportazione in corso... </comment>", $issue['key_adeo']));
-
-            if(!empty($this->history[$issue['worklogId']])) {
-                $output->writeln(sprintf("<info>%s - Worklog già esportato (ID: %s)</info>\n", $issue['key_adeo'], $this->history[$issue['worklogId']]));
-
-                try {
-                    $existingWorkLog = $adeoApi->getById($issue['key_adeo'], $this->history[$issue['worklogId']]);
-
-                    $worklogWasUpdated = $payload['comment'] != $existingWorkLog['comment'] ||
-                        $payload['timeSpent'] != $existingWorkLog['timeSpent'] ||
-                        strtotime($payload['started']) != strtotime($existingWorkLog['started']);
-
-                } catch (\Exception $exception) {
-
-                    $output->writeln(
-                        sprintf(
-                            "<error>Si è verificato un errore durante la verifica del worklog: %s</error>",
-                            $exception->getMessage()
-                        )
-                    );
-                    $worklogWasUpdated = false;
-                }
-
-
-                if (!$worklogWasUpdated || !$qh->ask(
-                    $input,
-                    $output,
-                    new ConfirmationQuestion("Il worklog è stato modificato dall'ultima esportazione. Vuoi aggiornare il worklog esterno? <comment>[y/N]</comment>", false)
-                )) {
-                    continue;
-                }
-
-                $adeoApi->update($issue['key_adeo'], $this->history[$issue['worklogId']], $payload);
-                $output->writeln([
-                    sprintf("<info>%s - Worklog aggiornato!</info>", $issue['key_adeo']),
-                    ""
-                ]);
-
-                continue;
-            }
-
-            if(!$auto) {
-                if (!$qh->ask(
-                    $input,
-                    $output,
-                    new ConfirmationQuestion("Procedo? <comment>[y/N]</comment>", false)
-                )) {
-                    continue;
-                }
-            }
-
-            $adeoWorklog = $adeoApi->create($issue['key_adeo'], $payload);
-
-            $this->history[$issue['worklogId']] = $adeoWorklog['id'];
-            file_put_contents($historyPath, json_encode($this->history, JSON_PRETTY_PRINT));
-
-            $output->writeln([
-                sprintf("<info>%s - Worklog creato con ID: %s</info>", $issue['key_adeo'], $adeoWorklog['id']),
-                ""
-            ]);
-        }
-
-        file_put_contents($historyPath, json_encode($this->history, JSON_PRETTY_PRINT));
 
         return 0;
     }

@@ -12,9 +12,9 @@ class IssueWorklog extends AbstractApi
 
         $response = $client->request(
             "GET",
-            sprintf("/rest/api/2/issue/%s/worklog", $issueIdOrKey),
+            sprintf("/rest/api/2/issue/%s/worklog?startedAfter=1737590400000", $issueIdOrKey),
             [
-                'body' => json_encode($options)
+                //'query' => $options
             ]
         );
 
@@ -60,6 +60,8 @@ class IssueWorklog extends AbstractApi
             'adjustEstimate' => 'leave',
             'notifyUsers' => 'false'
         ]);
+
+        dd($url, $body);
 
         $response = $client->request(
             'POST',
