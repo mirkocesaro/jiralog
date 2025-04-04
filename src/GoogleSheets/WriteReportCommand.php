@@ -24,8 +24,6 @@ class WriteReportCommand extends Command
         );
 
         $this->dotEnv->load();
-//        $this->dotEnv->required("ADEO_JIRA_BEARER_TOKEN");
-//        $this->dotEnv->required("ADEO_JIRA_EMAIL");
     }
 
     protected function configure(): void

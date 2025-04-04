@@ -12,9 +12,9 @@ class IssueWorklog extends AbstractApi
 
         $response = $client->request(
             "GET",
-            sprintf("/rest/api/2/issue/%s/worklog?startedAfter=1737590400000", $issueIdOrKey),
+            sprintf("/rest/api/2/issue/%s/worklog", $issueIdOrKey),
             [
-                //'query' => $options
+                'query' => $options
             ]
         );
 
