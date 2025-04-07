@@ -8,8 +8,14 @@ $application = new Application();
 
 try {
 
+    define("BASE_PATH", __DIR__);
+
     $application->add(new \MirkoCesaro\JiraLog\Console\Tempo\Worklog\LogCommand());
     $application->add(new \MirkoCesaro\JiraLog\Console\Tempo\WorkAttributes\AttributeListCommand());
+    $application->add(new \MirkoCesaro\JiraLog\Console\Jira\IssuePicker\IssuePickerCommand());
+    $application->add(new \MirkoCesaro\JiraLog\Console\Tempo\ExtractWorklogsCommand());
+    $application->add(new \MirkoCesaro\JiraLog\Console\Tempo\ActivityReportCommand());
+    $application->add(new \MirkoCesaro\JiraLog\Console\GoogleSheets\WriteReportCommand());
 
 }catch (Dotenv\Exception\ValidationException $exception){
     print_r($exception->getMessage());
